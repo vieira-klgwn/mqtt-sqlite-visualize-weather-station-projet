@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Station (MQTT WebSockets)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            margin: 50px 0; 
+            background-color: #f0f8ff;
+        }
+        .container { 
+            width: 320px; 
+            margin: auto; 
+            padding: 20px; 
+            border: 2px solid #007BFF; 
+            border-radius: 10px; 
+            background: #ffffff; 
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 { 
+            color: #007BFF; 
+            font-size: 24px; 
+        }
+        .data { 
+            font-size: 26px; 
+            font-weight: bold; 
+            color: #333; 
+            display: inline-block;
+            margin-top: 10px;
+        }
+        p { 
+            font-size: 18px; 
+            margin: 10px 0; 
+        }
+        canvas { 
+            max-width: 600px; 
+            margin: 20px auto; 
+            display: block;
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h2>MQTT Weather Station</h2>
+    <div class="container">
+        <p>Temperature: <span id="temp" class="data">--</span> °C</p>
+        <p>Humidity: <span id="humidity" class="data">--</span> %</p>
+    </div>
+
+    <canvas id="chart"></canvas>
+
+    <script>
+        const ctx = document.getElementById('chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Temperature (°C)', data: [], borderColor: 'red', fill: false },
+                    { label: 'Humidity (%)', data: [], borderColor: 'blue', fill: false }
+                ]
+            },
+            options: { responsive: true, scales: { x: { display: true }, y: { beginAtZero: true } } }
+        });
+
+        function updateData() {
+            fetch('http://localhost:3000/data')
+                .then(response => response.json())
+                .then(data => {
+                    const labels = data.map(d => d.time);
+                    chart.data.labels = labels;
+                    chart.data.datasets[0].data = data.map(d => d.avg_temp);
+                    chart.data.datasets[1].data = data.map(d => d.avg_humidity);
+                    chart.update();
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        setInterval(updateData, 5000);
+        updateData();
+    </script>
+</body>
+</html>
